@@ -11,7 +11,7 @@ const PLANNED_WORKFLOW = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-16 sm:py-24">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-16 sm:py-24">
       <header className="flex flex-col gap-4">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
           AI-Native Software Engineering Platform
@@ -60,10 +60,6 @@ export default function Home() {
         </ol>
       </section>
 
-      <footer className="text-xs text-foreground/50">
-        Portfolio project. See the docs directory for the PRD, architecture and
-        roadmap.
-      </footer>
-    </main>
+    </div>
   );
 }
