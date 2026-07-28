@@ -134,10 +134,24 @@ Open <http://localhost:3000>.
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)                     | Layers, orchestration, providers, boundaries     |
 | [`docs/DEVELOPMENT_GUIDELINES.md`](./docs/DEVELOPMENT_GUIDELINES.md) | Git, TypeScript, React, testing, Definition of Done |
 | [`docs/ROADMAP.md`](./docs/ROADMAP.md)                               | Sprint 1, Sprint 2, later phases                 |
-| [`docs/DECISIONS.md`](./docs/DECISIONS.md)                           | ADR-001 … ADR-007                                |
-| [`AGENTS.md`](./AGENTS.md)                                           | Agent responsibilities, I/O contracts, gates     |
+| [`docs/DECISIONS.md`](./docs/DECISIONS.md)                           | ADR-001 … ADR-008                                |
+| [`AGENTS.md`](./AGENTS.md)                                           | **Product** agent contracts — Planner, Architect, Coder, Reviewer, Tester, Security, PR Generator: their I/O, prohibitions and gates |
 | [`CLAUDE.md`](./CLAUDE.md)                                           | Working rules for Claude Code in this repository |
 | [`tasks/`](./tasks)                                                  | TASK-001 … TASK-008, each independently verifiable |
+
+### AI governance
+
+How the humans and AI roles that *build* this repository collaborate. This is a
+separate subject from [`AGENTS.md`](./AGENTS.md), which specifies the agents the
+product itself will run.
+
+| Document                                                            | Contents                                        |
+| ------------------------------------------------------------------- | ----------------------------------------------- |
+| [`docs/AI_CHARTER.md`](./docs/AI_CHARTER.md)                         | AI collaboration authority hierarchy and governing principles |
+| [`docs/AI_AGENT_ROLES.md`](./docs/AI_AGENT_ROLES.md)                 | **Development collaboration roles** — responsibilities, authority and restrictions for Work, Claude Code, Codex CLI and ChatGPT |
+| [`docs/AI_WORKFLOW.md`](./docs/AI_WORKFLOW.md)                       | The end-to-end collaboration pipeline, its phase gates and phase results |
+| [`docs/CODEX_REVIEW_GUIDE.md`](./docs/CODEX_REVIEW_GUIDE.md)         | Review checklist and severity classification for Codex CLI |
+| [`docs/WORK_GUIDE.md`](./docs/WORK_GUIDE.md)                         | Standard operating procedure for Work, the only role that performs Git writes |
 
 ---
 
@@ -146,7 +160,7 @@ Open <http://localhost:3000>.
 ```text
 .
 ├── .github/workflows/ci.yml   CI: typecheck, lint, test, build
-├── docs/                      Product and architecture documentation
+├── docs/                      Product, architecture and AI governance documentation
 ├── src/
 │   ├── app/                   Next.js App Router
 │   └── test/                  Test setup

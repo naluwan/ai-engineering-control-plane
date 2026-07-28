@@ -7,7 +7,7 @@ Documentation baseline) complete. Next up is item 3, TASK-003 Application Shell.
 Everything else on this page is planned work.
 
 Task status here reflects execution and verification state, not merge state.
-See [`../CLAUDE.md`](../CLAUDE.md) §10.
+See [`../CLAUDE.md`](../CLAUDE.md) §12.
 
 Dates are deliberately absent. This is a portfolio project; the ordering and the
 dependencies are the useful information, not a schedule.

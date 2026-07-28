@@ -171,7 +171,7 @@ pnpm verify
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - The list of components created, with each one's Server or Client designation
   and the justification for every `"use client"`.
@@ -204,5 +204,5 @@ Constraints:
 - Do not modify src/app/page.test.tsx, docs/, tasks/, or any config file.
 - The home page must keep rendering "AI Engineering Control Plane" as its h1.
 
-Run pnpm verify. Report in the format required by CLAUDE.md §9.
+Run pnpm verify. Report in the format required by CLAUDE.md §13.
 ```

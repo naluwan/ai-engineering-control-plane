@@ -185,7 +185,7 @@ pnpm verify
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - The final schema, entity by entity.
 - The migration file name and confirmation it applies to an empty database.
@@ -229,5 +229,5 @@ or route handler. Do not touch src/app/ or src/components/.
 
 pnpm build must succeed without a live database.
 
-Run pnpm verify. Report in the format required by CLAUDE.md §9.
+Run pnpm verify. Report in the format required by CLAUDE.md §13.
 ```

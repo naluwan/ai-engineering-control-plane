@@ -176,7 +176,7 @@ pnpm verify
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - The route table with each route's Server or Client designation.
 - Justification for every `"use client"`.
@@ -220,5 +220,5 @@ Requirements:
 
 Write the tests first. Query by role and accessible name.
 
-Run pnpm verify. Report in the format required by CLAUDE.md §9.
+Run pnpm verify. Report in the format required by CLAUDE.md §13.
 ```

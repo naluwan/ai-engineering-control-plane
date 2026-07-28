@@ -214,7 +214,7 @@ pnpm verify
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - The requirement status state machine and its legal transitions.
 - The end-to-end flow, step by step, from form submission to rendered plan.
@@ -262,5 +262,5 @@ inadequate, report it instead. Do not build the Architect Agent, task
 generation, or any approval gate.
 
 Write the tests first. Run pnpm verify, and measure how long a complete mock run
-takes. Report in the format required by CLAUDE.md §9.
+takes. Report in the format required by CLAUDE.md §13.
 ```

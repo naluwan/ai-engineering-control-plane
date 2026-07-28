@@ -192,7 +192,7 @@ pnpm verify
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - The `PlanSchema` definition and its version.
 - The `LlmProvider` interface signature.
@@ -237,5 +237,5 @@ Do not add any LLM SDK, HTTP client or network-capable dependency. Do not add
 UI or route handlers. Do not modify the Project, Requirement or Task models.
 
 Write the tests first. Run pnpm verify. Report in the format required by
-CLAUDE.md §9.
+CLAUDE.md §13.
 ```

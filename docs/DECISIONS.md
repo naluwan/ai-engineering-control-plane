@@ -13,6 +13,7 @@ by quietly changing the code.
 | 005 | Do not introduce Redis or queues during the first vertical slice   | Accepted |
 | 006 | Use human approval before code execution and PR creation           | Accepted |
 | 007 | Use PostgreSQL and Prisma in a later Task, not during repository bootstrap | Accepted |
+| 008 | Separate AI collaboration roles and reserve Git writes for Work     | Accepted |
 
 ---
 
@@ -537,6 +538,125 @@ Docker makes local PostgreSQL cheap enough.
 
 **A hosted database from day one.** Rejected: it introduces a credential and an
 external dependency into a repository that currently needs neither.
+
+---
+
+## ADR-008: Separate AI collaboration roles and reserve Git writes for Work
+
+**Status:** Accepted
+
+**Supersedes:** the per-task Git authorization rule established as Decision 2 of
+`tasks/FIX-TASK-002A.md`, in respect of Git write permission only. Everything
+else that task decided — the mandatory quality gates and the task status model —
+remains in force.
+
+### Context
+
+FIX-TASK-002A Decision 2 adopted **per-task Git authorization**: any role could
+perform a Git operation when the current execution prompt explicitly granted it.
+Under that rule, Claude Code was permitted to commit and push whenever a task
+authorized it.
+
+The AI governance work has since separated collaboration into four roles:
+
+- **Work**
+- **Claude Code**
+- **Codex CLI**
+- **ChatGPT**
+
+If Git permission can still be changed by a single prompt, the role boundary is
+not a boundary — it is a default that any instruction can override. That
+produces five concrete problems:
+
+- The implementer also controls version history.
+- Reviewer and executor authority blur together.
+- Merge approval and merge execution blur together.
+- Different tasks operate under different Git rules.
+- The audit trail cannot reliably attribute an action to a responsible role.
+
+A governance rule that any prompt can suspend is not a governance rule. It is a
+suggestion with extra words.
+
+### Decision
+
+1. **Work is the only role that may perform a Git write operation.**
+
+2. **Claude Code** implements the TASK and runs local verification, and performs
+   **no** Git write operation — no branch creation, no branch switching, no
+   commit, no push, no Pull Request, no merge, no rebase, no amend, no force
+   push, no reset, no cherry-pick, and no modification of Git history. This is a
+   permanent role boundary. It cannot be lifted by a prompt or by a single task.
+
+3. **Codex CLI** performs read-only independent review. It modifies no code, no
+   documentation and no Git state.
+
+4. **ChatGPT** is responsible for:
+   - scope decisions;
+   - architecture decisions;
+   - task review;
+   - Pull Request review;
+   - **merge approval**;
+   - AI workflow design.
+
+5. **Merge approval and merge execution are separated.** ChatGPT approves a
+   merge; Work executes it. Work never approves its own merge.
+
+6. **Every phase ends with stop → report → wait** for explicit authorization
+   before the next phase begins. No role starts the next phase on its own
+   initiative.
+
+The authority hierarchy and the governing principles live in
+[`AI_CHARTER.md`](./AI_CHARTER.md); the per-role detail lives in
+[`AI_AGENT_ROLES.md`](./AI_AGENT_ROLES.md). This ADR records the decision; those
+documents apply it. Neither restates the other.
+
+### Consequences
+
+**Positive**
+
+- Implementation, review, approval and execution are genuinely separated.
+- Every task operates under the same Git rules, so behaviour is predictable.
+- The risk of an accidental commit, an accidental push, or an unapproved merge
+  drops sharply.
+- The audit trail attributes each action to exactly one responsible role.
+- A role boundary that no prompt can suspend is enforceable, and therefore
+  reviewable.
+
+**Negative**
+
+- Every task requires a role handover.
+- The process has more steps than a single agent doing everything.
+- Work becomes a required participant in every task; nothing merges without it.
+- Even a one-line change cannot be committed directly by Claude Code.
+
+**Mitigations**
+
+- A fixed report format makes each handover cheap and unambiguous.
+- Explicit phase gates make it obvious whose turn it is.
+- Work executes only Git work that has been authorized, so its role stays
+  mechanical rather than judgemental.
+- Git state, commit SHA, CI result and Pull Request state are recorded as
+  evidence in every report, so a handover carries its own proof.
+
+### Alternatives considered
+
+**1. Keep per-task Git authorization.** Rejected: the role boundary would change
+with each prompt, so it could never become a stable governance rule. A boundary
+that varies by instruction cannot be audited, because there is no fixed
+expectation to audit against.
+
+**2. Allow Claude Code to commit but not push.** Rejected: committing already
+modifies version history. Implementation and Git execution would remain in the
+same hands, which is the separation this ADR exists to create.
+
+**3. Have ChatGPT execute Git operations and merges directly.** Rejected:
+ChatGPT's role is decision and review. A role that both approves and executes
+reintroduces exactly the conflation this ADR removes, one level up.
+
+**4. Forbid Git write operations to every role.** Rejected: the project still
+needs branches, commits, Pull Requests and merges to make progress. Prohibiting
+them everywhere does not remove the risk — it removes the ability to ship. The
+correct answer is to assign the capability to exactly one role, not to no role.
 
 ---
 

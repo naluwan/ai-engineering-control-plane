@@ -179,7 +179,7 @@ git diff --stat
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus a findings table:
+Report using the format in `CLAUDE.md` §13, plus a findings table:
 
 | Finding | Documents involved | Resolution |
 | ------- | ------------------ | ---------- |
@@ -210,6 +210,6 @@ This task changes documentation only.
 
 Then run pnpm verify and git diff --stat. The diff must contain only .md files.
 
-Report in the format required by CLAUDE.md §9, plus a findings table and a list
+Report in the format required by CLAUDE.md §13, plus a findings table and a list
 of contradictions you deliberately left for a human to decide.
 ```
