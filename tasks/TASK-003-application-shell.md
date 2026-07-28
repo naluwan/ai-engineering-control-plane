@@ -1,6 +1,6 @@
 # TASK-003：Application Shell
 
-**Status:** Not started.
+**Status:** Completed.
 **Depends on:** TASK-001 (Next.js project, Tailwind, Vitest must exist).
 
 Does **not** depend on TASK-002, and must not assume a database, an API, or any
