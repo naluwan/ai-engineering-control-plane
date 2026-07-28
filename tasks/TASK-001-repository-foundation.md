@@ -169,7 +169,7 @@ git status --short
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - Repository URL, visibility and default branch.
 - Commit hash and message.
@@ -207,5 +207,5 @@ Constraints: pnpm only; TypeScript strict; no any; no unused dependencies; no
 Redis, BullMQ, LangGraph, MCP, Prisma, PostgreSQL, LLM SDK or GitHub SDK; no
 force push; exactly one commit.
 
-Report in the format required by CLAUDE.md §9.
+Report in the format required by CLAUDE.md §13.
 ```

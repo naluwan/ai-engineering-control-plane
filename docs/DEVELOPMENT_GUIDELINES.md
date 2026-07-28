@@ -12,10 +12,13 @@ Trunk-based, short-lived branches off `main`.
 
 - `main` is always releasable and always green.
 - No direct commits to `main` after the bootstrap commit.
-- Creating a branch, committing, pushing and opening a Pull Request each require
-  explicit per-task authorization from the current execution prompt. This
-  document describing the convention is not authorization to perform it. See
-  [`../CLAUDE.md`](../CLAUDE.md) §7.1.
+- **Git write operations are executed only by Work**, and only under explicit
+  authorization for the run in progress. This document describing the convention
+  is not authorization to perform it. Claude Code performs no Git write
+  operation at all. See [`DECISIONS.md`](./DECISIONS.md) ADR-008,
+  [`AI_CHARTER.md`](./AI_CHARTER.md) §4,
+  [`AI_AGENT_ROLES.md`](./AI_AGENT_ROLES.md) and
+  [`WORK_GUIDE.md`](./WORK_GUIDE.md).
 - One branch per task, named after the task:
 
 ```text
@@ -304,7 +307,7 @@ A task is done when **all** of the following hold:
 10. Documentation affected by the change was updated in the same task.
 11. Any architectural decision made is recorded as an ADR.
 12. No secret appears anywhere in the diff.
-13. The report follows the format in [`../CLAUDE.md`](../CLAUDE.md) §9.
+13. The report follows the format in [`../CLAUDE.md`](../CLAUDE.md) §13.
 
 ---
 

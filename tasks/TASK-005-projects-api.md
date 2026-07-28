@@ -174,7 +174,7 @@ pnpm verify
 
 ## Required Output
 
-Report using the format in `CLAUDE.md` §9, plus:
+Report using the format in `CLAUDE.md` §13, plus:
 
 - The endpoint table: method, path, request shape, response shape, status codes.
 - The error taxonomy and its status mapping.
@@ -216,5 +216,5 @@ first.
 Do not add UI. Do not modify the Prisma schema — if a field is missing, report
 it. Do not add update or delete endpoints.
 
-Run pnpm verify. Report in the format required by CLAUDE.md §9.
+Run pnpm verify. Report in the format required by CLAUDE.md §13.
 ```
