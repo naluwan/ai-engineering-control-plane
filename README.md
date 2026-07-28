@@ -84,7 +84,7 @@ token is spent on a real model. See [`docs/PRD.md`](./docs/PRD.md).
 | Framework         | Next.js 16 (App Router)                         |
 | UI                | React 19, Tailwind CSS v4                       |
 | Language          | TypeScript 5, `strict` mode, no `any`           |
-| Testing           | Vitest, React Testing Library, jsdom            |
+| Testing           | Vitest 4, React Testing Library, jsdom          |
 | Linting           | ESLint 9 (flat config, `eslint-config-next`)    |
 | Persistence       | PostgreSQL + Prisma — **planned, not installed** |
 | Agent contracts   | Zod schemas — **planned, not installed**        |

@@ -1,8 +1,9 @@
 # Architecture
 
-**Status:** Target architecture for the MVP. Only the presentation shell and
-the verification toolchain exist today. PostgreSQL, Prisma, the orchestrator
-and the providers are specified here but **not installed and not implemented**.
+**Status:** Target architecture for the MVP. Only a single static placeholder
+page and the verification toolchain exist today — the application shell itself
+is TASK-003 and is not built yet. PostgreSQL, Prisma, the orchestrator and the
+providers are specified here but **not installed and not implemented**.
 
 ---
 
