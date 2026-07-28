@@ -23,8 +23,8 @@ validated plan and an approvable task set, driven entirely by mock providers.
 | - | ------------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------- |
 | 1 | Repository foundation     | TASK-001 | —          | Next.js + TypeScript strict + Tailwind + Vitest + ESLint + CI. `pnpm verify` green. **Done.** |
 | 2 | Documentation baseline    | TASK-002 | 001        | All documents cross-checked for consistency. No engineering changes. **Done.**                |
-| 3 | Application shell         | TASK-003 | 001        | Layout, navigation, shared UI primitives, route structure. No business features.               |
-| 4 | Database foundation       | TASK-004 | 001        | PostgreSQL + Prisma installed, schema for Project/Requirement/Plan/Task, migrations, test DB.  |
+| 3 | Application shell         | TASK-003 | 001        | Layout, navigation, shared UI primitives, route structure. No business features. **Done.**     |
+| 4 | Database foundation       | TASK-004 | 001        | PostgreSQL + Prisma installed, schema for Project/Requirement/Plan, migrations, test DB.       |
 | 5 | Projects API              | TASK-005 | 004        | Application use cases and route handlers for create/list/get, Zod-validated.                   |
 | 6 | Projects UI               | TASK-006 | 003, 005   | Project list, detail and creation form wired to the API.                                       |
 | 7 | Mock Planner contracts    | TASK-007 | 004        | `LlmProvider` interface, `PlanSchema`, deterministic mock provider, invocation audit record.    |
@@ -48,7 +48,7 @@ with all three human gates enforced.
 
 | # | Item                       | Depends on | Outcome                                                                                  |
 | - | -------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
-| 1 | Architect Agent            | Sprint 1   | `ArchitectureProposalSchema`, mock Architect, generated tasks persisted with dependencies. |
+| 1 | Architect Agent            | Sprint 1   | `ArchitectureProposalSchema`, mock Architect, ArchitectureProposal and generated Task persistence with dependencies. |
 | 2 | Task approval              | 1          | Gate G1: review, approve or reject a task set. Decisions recorded with actor and comment.  |
 | 3 | Agent run model            | 2          | `AgentRun` entity, run state machine, synchronous pipeline execution.                      |
 | 4 | Logs and cost tracking     | 3          | Structured logging with correlation IDs; per-invocation token and cost fields.             |

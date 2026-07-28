@@ -14,11 +14,11 @@ ends here.
 
 `docs/ARCHITECTURE.md` §5 specifies the target data model. This task installs
 the persistence layer and implements the part of that model needed by the
-Sprint 1 slice — projects, requirements, plans and tasks — together with the
+Sprint 1 slice — projects, requirements and plans — together with the
 repository interfaces the application layer will depend on.
 
-The entities for agent runs, approvals, quality gates and pull request drafts
-belong to Sprint 2 and are deliberately not modelled here.
+Architecture proposals, tasks, agent runs, approvals, quality gates and pull
+request drafts belong to Sprint 2 and are deliberately not modelled here.
 
 ## Goal
 
@@ -29,25 +29,25 @@ CI.
 
 ## Scope
 
-- Install `prisma` and `@prisma/client`.
+- Install `prisma`, `@prisma/client` and `zod`. These are the only dependencies
+  this task may add.
 - `prisma/schema.prisma` covering:
   - `Project` — id, name, description, repositoryUrl, stackSummary, timestamps.
   - `Requirement` — id, projectId, sourceType (`MANUAL` / `GITHUB_ISSUE`),
     rawText, status, timestamps.
   - `Plan` — id, requirementId, schemaVersion, content (JSON), timestamps.
-  - `Task` — id, planId, title, description, scope, outOfScope, expectedFiles,
-    acceptanceCriteria, testRequirements, dependsOn, estimatedComplexity,
-    status, ordering, timestamps.
 - The initial migration.
 - A Prisma client singleton safe under Next.js development hot reload.
 - Repository **interfaces** in the application layer:
-  `ProjectRepository`, `RequirementRepository`, `PlanRepository`,
-  `TaskRepository`.
+  `ProjectRepository`, `RequirementRepository`, `PlanRepository`.
 - Prisma implementations of those interfaces in the infrastructure layer.
-- Domain types for the four entities, defined in the domain layer and free of
+- Domain types for the three entities, defined in the domain layer and free of
   Prisma imports.
-- Environment configuration validated at startup, with `DATABASE_URL` required.
-- `.env.example` updated with a `DATABASE_URL` placeholder.
+- Environment configuration validated at startup. `DATABASE_URL` is required
+  for application and migration use; `TEST_DATABASE_URL` is required for
+  integration tests.
+- Preserve the placeholder-only `DATABASE_URL` and `TEST_DATABASE_URL` entries
+  in `.env.example`; never add a real credential.
 - `docker-compose.yml` providing a local PostgreSQL instance for development
   and testing.
 - Integration tests for each repository implementation against a real test
@@ -59,6 +59,8 @@ CI.
 
 - Any UI. No page, no component, no route.
 - Any route handler or API endpoint. That is TASK-005.
+- `ArchitectureProposal` and `Task`. Their persistence is introduced with the
+  Architect flow in Sprint 2.
 - Agent entities: `AgentRun`, `AgentInvocation`, `Approval`,
   `QualityGateResult`, `PullRequestDraft`. Those belong to Sprint 2.
 - Agent schemas, providers or orchestration. `Plan.content` is stored as JSON
@@ -71,9 +73,9 @@ CI.
 
 ## Acceptance Criteria
 
-1. `prisma` and `@prisma/client` are in `package.json`, and no other new
+1. `prisma`, `@prisma/client` and `zod` are in `package.json`, and no other new
    dependency was added.
-2. `prisma/schema.prisma` defines exactly the four entities listed in Scope,
+2. `prisma/schema.prisma` defines exactly the three entities listed in Scope,
    with the stated relations and cascade behaviour.
 3. `pnpm prisma migrate dev` produces a migration that applies cleanly to an
    empty database.
@@ -81,9 +83,12 @@ CI.
    the migration is not dependent on development state.
 5. `docker compose up -d` starts a PostgreSQL instance the application can
    connect to.
-6. `.env.example` contains a `DATABASE_URL` placeholder and no real credential.
-7. Startup fails with a clear error when `DATABASE_URL` is absent or malformed.
-8. Each of the four repository interfaces is declared in the application layer
+6. `.env.example` contains placeholder-only `DATABASE_URL` and
+   `TEST_DATABASE_URL` values and no real credential.
+7. Application startup fails with a clear error when `DATABASE_URL` is absent
+   or malformed. Integration-test setup fails clearly when `TEST_DATABASE_URL`
+   is absent, malformed or equal to `DATABASE_URL`.
+8. Each of the three repository interfaces is declared in the application layer
    and contains no Prisma type in any signature.
 9. Each interface has a Prisma implementation in the infrastructure layer.
 10. Domain types contain no import from `@prisma/client`.
@@ -102,19 +107,19 @@ CI.
 - PostgreSQL 16 or later.
 - Prisma with the `postgresql` provider.
 - `cuid()` identifiers.
-- Enums for `RequirementSourceType`, `RequirementStatus` and `TaskStatus`.
+- Enums for `RequirementSourceType` and `RequirementStatus`.
 - `Plan.content` typed as `Json`; the Zod schema that validates it arrives in
   TASK-007.
-- `Task.dependsOn` stores task identifiers; cycles are rejected in the domain
-  layer, not by the database.
-- Cascade delete from `Project` down through `Requirement`, `Plan` and `Task`.
+- Cascade delete from `Project` through `Requirement` to `Plan`.
 - Repository interfaces live in `src/application/ports/`; implementations live
   in `src/infrastructure/persistence/`.
 - Domain types live in `src/domain/` and import nothing from infrastructure.
 - Environment validation uses Zod at startup — the first use of Zod in the
   project, which is why `zod` is added here.
-- Integration tests use a separate `DATABASE_URL` and a transaction or truncate
-  strategy for isolation.
+- `DATABASE_URL` is used by the application and migration commands.
+- Integration tests use `TEST_DATABASE_URL` and a transaction or truncate
+  strategy for isolation. Test setup must reject a `TEST_DATABASE_URL` that is
+  equal to `DATABASE_URL`.
 - `postinstall` runs `prisma generate`.
 - `pnpm build` must not require a live database connection.
 
@@ -127,20 +132,16 @@ prisma/migrations/<timestamp>_init/migration.sql          created
 src/domain/project.ts                                     created
 src/domain/requirement.ts                                 created
 src/domain/plan.ts                                        created
-src/domain/task.ts                                        created
 src/application/ports/project-repository.ts               created
 src/application/ports/requirement-repository.ts           created
 src/application/ports/plan-repository.ts                  created
-src/application/ports/task-repository.ts                  created
 src/infrastructure/persistence/prisma-client.ts           created
 src/infrastructure/persistence/prisma-project-repository.ts      created
 src/infrastructure/persistence/prisma-requirement-repository.ts  created
 src/infrastructure/persistence/prisma-plan-repository.ts         created
-src/infrastructure/persistence/prisma-task-repository.ts         created
 src/infrastructure/config/env.ts                          created
 src/test/database.ts                                      created
 src/infrastructure/persistence/*.integration.test.ts      created
-.env.example                                              modified
 .github/workflows/ci.yml                                  modified
 README.md                                                 modified
 package.json                                              modified
@@ -163,7 +164,7 @@ LICENSE
 
 - Integration tests, not mocked-Prisma unit tests. Mocking the database proves
   nothing about the schema.
-- Each repository: create, read by id, list, update, delete.
+- Each of the three repositories: create, read by id, list, update, delete.
 - Cascade delete behaviour is asserted explicitly.
 - Unique and required constraints are asserted by attempting a violation.
 - Environment validation is unit-tested for missing and malformed input.
@@ -201,27 +202,30 @@ Execute TASK-004 as specified in tasks/TASK-004-database-foundation.md.
 First read CLAUDE.md, docs/ARCHITECTURE.md (especially §2 layers, §5 data
 model), docs/DECISIONS.md ADR-007, and docs/DEVELOPMENT_GUIDELINES.md.
 
-Install prisma, @prisma/client and zod. Create the Prisma schema for exactly
-four entities — Project, Requirement, Plan, Task — with the fields, enums,
-relations and cascade behaviour listed in the task. Generate the initial
-migration. Add docker-compose.yml with PostgreSQL 16.
+Install prisma, @prisma/client and zod. These are the only dependencies this
+task may add. Create the Prisma schema for exactly three entities — Project,
+Requirement and Plan — with the fields, enums, relations and cascade behaviour
+listed in the task. Generate the initial migration. Add docker-compose.yml with
+PostgreSQL 16.
 
 Define repository interfaces in src/application/ports/ and Prisma
 implementations in src/infrastructure/persistence/. Define domain types in
 src/domain/. No Prisma type may appear in an application or domain signature,
 and no domain file may import @prisma/client.
 
-Add Zod-validated environment configuration requiring DATABASE_URL, and add a
-DATABASE_URL placeholder to .env.example. Never write a real credential.
+Add Zod-validated environment configuration requiring DATABASE_URL for the
+application and migrations and TEST_DATABASE_URL for integration tests.
+Integration-test setup must reject equal values. Preserve the placeholder-only
+entries in .env.example. Never write a real credential.
 
 Write integration tests against a real test database — do not mock Prisma.
 Cover CRUD for each repository, cascade deletes, and constraint violations.
 Make the suite isolated and repeatable. Update CI with a PostgreSQL service
 container and a migration step.
 
-Do not model AgentRun, AgentInvocation, Approval, QualityGateResult or
-PullRequestDraft — those are Sprint 2. Do not add any UI or route handler. Do
-not touch src/app/ or src/components/.
+Do not model ArchitectureProposal, Task, AgentRun, AgentInvocation, Approval,
+QualityGateResult or PullRequestDraft — those are Sprint 2. Do not add any UI
+or route handler. Do not touch src/app/ or src/components/.
 
 pnpm build must succeed without a live database.
 

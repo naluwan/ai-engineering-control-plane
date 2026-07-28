@@ -166,6 +166,10 @@ special-cased handling in the application layer. See ADR-003.
 Prisma over PostgreSQL. Introduced in a later task, not during bootstrap. See
 ADR-007.
 
+Delivery is staged without changing this target model. TASK-004 implements
+`Project`, `Requirement` and `Plan`. `ArchitectureProposal` and `Task`
+persistence are introduced with the Architect flow in Sprint 2.
+
 ```text
 Project 1─n Requirement 1─1 Plan
                         1─1 ArchitectureProposal 1─n Task
