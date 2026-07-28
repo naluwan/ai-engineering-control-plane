@@ -12,6 +12,10 @@ Trunk-based, short-lived branches off `main`.
 
 - `main` is always releasable and always green.
 - No direct commits to `main` after the bootstrap commit.
+- Creating a branch, committing, pushing and opening a Pull Request each require
+  explicit per-task authorization from the current execution prompt. This
+  document describing the convention is not authorization to perform it. See
+  [`../CLAUDE.md`](../CLAUDE.md) §7.1.
 - One branch per task, named after the task:
 
 ```text
@@ -317,6 +321,13 @@ pnpm verify      # all four, in order
 
 Run `pnpm verify` before every commit. CI runs the same commands, so a local
 pass is a reliable predictor.
+
+These five are the **mandatory quality gates**. Every task file's Verification
+Commands section lists them in this order, unmodified. A task may prepend the
+environment preparation it genuinely needs — `docker compose up -d` and
+`pnpm prisma migrate deploy` for the tasks that touch the database — and may
+append repository inspection commands such as `git diff --stat`. No task may
+delete, replace, reorder or skip a gate.
 
 ---
 

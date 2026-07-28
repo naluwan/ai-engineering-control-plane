@@ -1,6 +1,6 @@
 # TASK-002：Documentation Baseline Validation
 
-**Status:** Not started.
+**Status:** Completed.
 **Depends on:** TASK-001 (repository foundation and the initial documentation
 set must exist).
 
@@ -73,9 +73,23 @@ code, and any contradiction found is either fixed or explicitly recorded.
 3. The product name and category are identical everywhere they appear.
 4. The stack table in `README.md` matches `package.json` exactly for Next.js,
    React, TypeScript, Tailwind, Vitest, Node and pnpm.
-5. The verification command list is identical in `README.md`, `CLAUDE.md`,
-   `docs/DEVELOPMENT_GUIDELINES.md` and every task file's Verification Commands
-   section, and matches `package.json` scripts.
+5. Every task file's Verification Commands section contains the mandatory
+   quality gates, in this order and unmodified:
+
+   ```bash
+   pnpm typecheck
+   pnpm lint
+   pnpm test
+   pnpm build
+   pnpm verify
+   ```
+
+   A task may prepend the environment preparation commands it genuinely needs
+   (for example `docker compose up -d` or `pnpm prisma migrate deploy`), and may
+   append repository inspection commands (for example `git diff --stat`). A task
+   may **not** delete, replace, reorder or skip a mandatory quality gate. The
+   gate names match `package.json` scripts and the command lists in
+   `README.md`, `CLAUDE.md` and `docs/DEVELOPMENT_GUIDELINES.md`.
 6. Agent names in `AGENTS.md`, `README.md`, `docs/PRD.md` and
    `docs/ARCHITECTURE.md` are identical.
 7. Gate identifiers G1, G2 and G3 have the same position and meaning in
@@ -84,7 +98,10 @@ code, and any contradiction found is either fixed or explicitly recorded.
    and in the task files themselves.
 9. Every ADR contains all five required sections.
 10. No document states that an unimplemented feature is implemented.
-11. Every task file contains all fourteen required sections.
+11. Every task file contains all twelve required `##` sections: Context, Goal,
+    Scope, Out of Scope, Acceptance Criteria, Technical Requirements, Expected
+    Files, Do Not Touch, Test Requirements, Verification Commands, Required
+    Output, Claude Code Execution Prompt.
 12. `pnpm verify` still exits 0 — proving no engineering was changed.
 13. `git diff --stat` shows changes only to `.md` files.
 14. A findings list is produced covering: inconsistencies fixed, and
@@ -180,7 +197,7 @@ tasks/. Cross-check them for factual consistency: product name and category,
 stack and versions, MVP and non-MVP scope, agent names, gate identifiers and
 positions, task numbering and dependencies, and the verification command list.
 Also verify that every internal Markdown link resolves, that every ADR has all
-five required sections, that every task file has all fourteen required
+five required sections, that every task file has all twelve required ##
 sections, and that no document claims an unimplemented feature works.
 
 Fix every inconsistency with a minimal edit. Where two documents disagree and

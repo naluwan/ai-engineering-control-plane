@@ -101,13 +101,17 @@ Create Project
 
 ## 6. MVP goals
 
-| ID | Goal                                                                                 |
-| -- | ------------------------------------------------------------------------------------ |
-| G1 | Prove the orchestration and approval model end to end without any real model calls.   |
-| G2 | Make every agent artifact schema-validated and persisted.                             |
-| G3 | Make the audit trail complete enough to reconstruct a run from the database alone.    |
-| G4 | Enforce human approval gates structurally, not by convention.                         |
-| G5 | Keep the provider boundary clean enough that swapping mock for real is a config change. |
+| ID    | Goal                                                                                 |
+| ----- | ------------------------------------------------------------------------------------ |
+| MG-01 | Prove the orchestration and approval model end to end without any real model calls.   |
+| MG-02 | Make every agent artifact schema-validated and persisted.                             |
+| MG-03 | Make the audit trail complete enough to reconstruct a run from the database alone.    |
+| MG-04 | Enforce human approval gates structurally, not by convention.                         |
+| MG-05 | Keep the provider boundary clean enough that swapping mock for real is a config change. |
+
+`MG-*` identifies an MVP goal. `G1`, `G2` and `G3` are reserved throughout this
+repository for the human approval gates defined in [`../AGENTS.md`](../AGENTS.md)
+§2, and are never used for anything else.
 
 Why mocks first: the expensive, risky part of this product is the orchestration,
 the gates and the audit model — not the model call. Validating those against

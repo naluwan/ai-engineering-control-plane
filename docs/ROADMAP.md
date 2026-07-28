@@ -2,8 +2,12 @@
 
 Delivery sequence for the AI Engineering Control Plane.
 
-**Current position:** Sprint 1, item 1 (Repository foundation) complete.
+**Current position:** Sprint 1, items 1 and 2 (Repository foundation,
+Documentation baseline) complete. Next up is item 3, TASK-003 Application Shell.
 Everything else on this page is planned work.
+
+Task status here reflects execution and verification state, not merge state.
+See [`../CLAUDE.md`](../CLAUDE.md) §10.
 
 Dates are deliberately absent. This is a portfolio project; the ordering and the
 dependencies are the useful information, not a schedule.
@@ -18,7 +22,7 @@ validated plan and an approvable task set, driven entirely by mock providers.
 | # | Item                      | Task     | Depends on | Outcome                                                                                     |
 | - | ------------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------- |
 | 1 | Repository foundation     | TASK-001 | —          | Next.js + TypeScript strict + Tailwind + Vitest + ESLint + CI. `pnpm verify` green. **Done.** |
-| 2 | Documentation baseline    | TASK-002 | 001        | All documents cross-checked for consistency. No engineering changes.                          |
+| 2 | Documentation baseline    | TASK-002 | 001        | All documents cross-checked for consistency. No engineering changes. **Done.**                |
 | 3 | Application shell         | TASK-003 | 001        | Layout, navigation, shared UI primitives, route structure. No business features.               |
 | 4 | Database foundation       | TASK-004 | 001        | PostgreSQL + Prisma installed, schema for Project/Requirement/Plan/Task, migrations, test DB.  |
 | 5 | Projects API              | TASK-005 | 004        | Application use cases and route handlers for create/list/get, Zod-validated.                   |

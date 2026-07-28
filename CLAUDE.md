@@ -113,9 +113,28 @@ Rules:
 - Never commit secrets. No API keys, tokens, passwords or private keys in any
   file, including tests, fixtures and documentation. `.env.example` holds
   placeholders only.
-- The repository bootstrap task (`TASK-001`) is the one explicit exception: it
-  is authorised to create the repository, produce a single commit, and push to
-  `main`.
+
+### 7.1 Git operations require per-task authorization
+
+Every Git operation that leaves the working tree — creating or switching a
+branch, committing, pushing, opening or updating a Pull Request, merging,
+enabling auto-merge, amending, rebasing or rewriting history — requires
+**explicit authorization in the current user execution prompt**. Authorization
+is granted per task and does not carry over to the next one.
+
+- **A document is not an authorization.** A task file, an ADR, a roadmap entry
+  or this file describing a branch, commit or push does not grant permission to
+  perform it. Only the user's execution prompt for the run in progress does.
+- Authorization granted for one task never extends to another, and never
+  broadens: permission to commit is not permission to push, and permission to
+  push a task branch is never permission to push `main`.
+- Merging a Pull Request, enabling auto-merge, force-pushing, amending and
+  rebasing each require their own explicit authorization. `git push --force` and
+  `git push --force-with-lease` are prohibited outright.
+- Without authorization, leave the changes in the working tree and report them.
+  Never commit "to be safe".
+- When a prompt's authorization is ambiguous, treat it as absent and report
+  rather than acting.
 
 ---
 
@@ -163,3 +182,40 @@ Exactly one task. Do not start it.
 
 Report failures plainly. A `FAIL` reported honestly is worth more than a
 `PASS` that was achieved by weakening the check.
+
+---
+
+## 10. Task status
+
+A task's status records **execution and verification state**. It is not a Pull
+Request state, and it does not mean "merged".
+
+Permitted values:
+
+| Status        | Meaning                                                             |
+| ------------- | ------------------------------------------------------------------- |
+| `Not started` | No work has begun.                                                  |
+| `In progress` | Work is under way; acceptance criteria are not all met yet.          |
+| `In review`   | Work is complete and awaiting human review.                          |
+| `Completed`   | All five conditions below hold.                                      |
+| `Blocked`     | Work cannot continue until an external dependency or decision lands. |
+
+A task may be marked `Completed` only when **all** of the following are true:
+
+1. Every acceptance criterion passes.
+2. Every verification command passes.
+3. Scope validation passes — nothing outside the declared scope was modified.
+4. No unresolved blocking issue remains.
+5. The Pull Request is ready to be merged.
+
+Note what condition 5 does **not** say: the Pull Request does not have to be
+merged. A task can be `Completed` while its Pull Request is still open.
+
+The status written on a task branch is provisional. **Status on `main` becomes
+the official source of truth only once the Pull Request is merged.** Until then,
+the branch records the executing agent's claim, and the reviewer's job is to
+check it.
+
+Never mark a task `Completed` to make a report look finished. A `Blocked` or
+`In review` status stated honestly is more useful than a `Completed` that a
+reviewer has to disprove.
