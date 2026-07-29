@@ -22,6 +22,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # Throwaway PostgreSQL for this job only. The credentials are fixed,
+    # ephemeral, CI-only values for a container that is destroyed when the job
+    # ends and is never reachable from outside the runner. They are not a
+    # production secret and are deliberately not stored as GitHub secrets:
+    # putting a well-known throwaway password in a secret would imply it
+    # matters.
+    services:
+      postgres:
+        image: postgres:16.10-alpine
+        env:
+          POSTGRES_USER: acp
+          POSTGRES_PASSWORD: acp_ci_only
+          POSTGRES_DB: acp_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U acp -d acp_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://acp:acp_ci_only@localhost:5432/acp_dev
+      TEST_DATABASE_URL: postgresql://acp:acp_ci_only@localhost:5432/acp_test
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,8 +60,25 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # The service container's entrypoint only creates POSTGRES_DB, so the
+      # integration-test database is created here. TEST_DATABASE_URL must point
+      # at a different database from DATABASE_URL — the suite deletes rows.
+      - name: Create integration test database
+        run: |
+          PGPASSWORD=acp_ci_only psql -h localhost -U acp -d acp_dev \
+            -c 'CREATE DATABASE acp_test OWNER acp;'
+
+      # Runs the root postinstall, which runs `prisma generate`.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations to the application database
+        run: pnpm exec prisma migrate deploy
+
+      - name: Apply migrations to the integration test database
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
 
       - name: Typecheck
         run: pnpm typecheck
@@ -44,6 +86,7 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Runs both vitest projects: unit/component and repository integration.
       - name: Test
         run: pnpm test
 

@@ -1,0 +1,37 @@
+# Local development and integration testing only.
+#
+# The credentials below are fixed, well-known, LOCAL-DEVELOPMENT-ONLY values.
+# They are not a production secret and must never be reused anywhere else, nor
+# copied into .env.example. The database is bound to 127.0.0.1, so it is not
+# reachable from outside this machine.
+
+name: ai-engineering-control-plane
+
+services:
+  postgres:
+    image: postgres:16.10-alpine
+    container_name: acp-postgres
+    restart: unless-stopped
+    environment:
+      # Local-development-only credentials. Not a production secret.
+      POSTGRES_USER: acp
+      POSTGRES_PASSWORD: acp_local_dev_only
+      POSTGRES_DB: acp_dev
+    ports:
+      # Bound to loopback: reachable from this machine only.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - acp-postgres-data:/var/lib/postgresql/data
+      # Runs once, on first initialisation of an empty volume, to create the
+      # separate integration-test database.
+      - ./docker/postgres/init-test-database.sql:/docker-entrypoint-initdb.d/10-init-test-database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acp -d acp_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  acp-postgres-data:
+    name: acp-postgres-data

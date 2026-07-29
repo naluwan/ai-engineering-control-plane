@@ -1,0 +1,68 @@
+// AI Engineering Control Plane — Sprint 1 persistence.
+//
+// Only the three entities the Sprint 1 slice needs are modelled here.
+// ArchitectureProposal, Task, AgentRun, AgentInvocation, Approval,
+// QualityGateResult and PullRequestDraft belong to Sprint 2 and are
+// deliberately absent — see tasks/TASK-004-database-foundation.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RequirementSourceType {
+  MANUAL
+  GITHUB_ISSUE
+}
+
+enum RequirementStatus {
+  SUBMITTED
+  PLANNING
+  PLANNED
+  PLANNING_FAILED
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  repositoryUrl String?
+  stackSummary  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  requirements Requirement[]
+}
+
+model Requirement {
+  id         String                @id @default(cuid())
+  projectId  String
+  sourceType RequirementSourceType @default(MANUAL)
+  rawText    String
+  status     RequirementStatus     @default(SUBMITTED)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // A requirement has at most one plan; the plan may not exist yet.
+  plan Plan?
+
+  @@index([projectId])
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  // Unique, which is what makes Requirement → Plan a one-to-one relation.
+  requirementId String   @unique
+  schemaVersion String
+  content       Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+}
