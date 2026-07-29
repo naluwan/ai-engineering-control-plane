@@ -108,6 +108,71 @@ pnpm dev
 
 Open <http://localhost:3000>.
 
+### Database setup
+
+Requires Docker with Compose v2. The stack runs one PostgreSQL 16 container
+holding two databases: `acp_dev` for the application and `acp_test` for the
+integration suite.
+
+> **Local-development-only credentials.** `docker-compose.yml` contains fixed,
+> well-known credentials for a container bound to `127.0.0.1`. They are not a
+> production secret, must not be reused anywhere else, and must not be copied
+> into `.env.example`. Never commit a real credential.
+
+Start the database and wait for it to report healthy:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+Point your shell at it. `.env.local` is git-ignored; `.env.example` documents
+the shape and holds placeholders only.
+
+```bash
+export DATABASE_URL="postgresql://acp:acp_local_dev_only@127.0.0.1:5432/acp_dev"
+export TEST_DATABASE_URL="postgresql://acp:acp_local_dev_only@127.0.0.1:5432/acp_test"
+```
+
+`TEST_DATABASE_URL` is a **destructive target**: the integration suite deletes
+every `Project`, `Requirement` and `Plan` row from it. It must be a different
+database from `DATABASE_URL` — test setup refuses to run when the two are
+equal.
+
+Apply the schema. Use `migrate dev` while developing, when you have changed
+`prisma/schema.prisma` and want a new migration generated:
+
+```bash
+pnpm prisma migrate dev
+```
+
+Use `migrate deploy` to apply existing migrations without generating any — this
+is what CI runs, and how the test database is prepared:
+
+```bash
+pnpm prisma migrate deploy                                    # application database
+DATABASE_URL="$TEST_DATABASE_URL" pnpm prisma migrate deploy  # test database
+```
+
+Run the suites. `pnpm test` runs both the unit/component tests and the
+repository integration tests against the real test database:
+
+```bash
+pnpm test
+pnpm verify
+```
+
+Stop the database when you are done. `stop` keeps the data volume; `down -v`
+deletes it:
+
+```bash
+docker compose stop
+```
+
+`pnpm build` does **not** need a live database connection. It requires
+`DATABASE_URL` to be well-formed, but never opens a connection, so a build
+succeeds with the database stopped.
+
 ### Scripts
 
 | Script               | Purpose                                        |
