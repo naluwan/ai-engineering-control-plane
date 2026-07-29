@@ -1,24 +1,66 @@
 # Architecture
 
-**Status:** Target architecture for the MVP.
+**Status:** This document describes the complete **target architecture** for the
+MVP. The application shell and the database foundation are in place; the
+workflow layers built on top of them are not.
 
-What exists today:
+Sections 3 to 9 remain the target design. Some of the capabilities they
+describe are now implemented and some are still ahead — the inventory below is
+the accurate account of which is which, and is the part to read first.
 
-- The **application shell** (TASK-003): the root layout, navigation, the `/`,
-  `/projects` and `/docs` routes, and the shared UI primitives.
-- The **verification toolchain**: TypeScript strict, ESLint, Vitest and the
-  build, all wired into `pnpm verify` and CI.
+**What exists today:**
 
-What does **not** exist yet:
+1. **Application shell** (TASK-003): the root layout, navigation, the `/`,
+   `/projects` and `/docs` routes, and the shared UI primitives.
 
-- **PostgreSQL** — not installed, not implemented.
-- **Prisma** — not installed, not implemented.
-- **The orchestrator** — not implemented.
-- **The providers**, including the mock providers — not implemented.
-- Every persistence, application-layer and agent concern described below.
+2. **Verification toolchain**: TypeScript strict, ESLint, Vitest and the build,
+   all wired into `pnpm verify` and CI.
 
-TASK-004, which introduces PostgreSQL and Prisma, is **Not started**. Everything
-in sections 3 to 9 is specification for work not yet done.
+3. **Database foundation** (TASK-004):
+   - PostgreSQL 16, provisioned locally through Docker Compose.
+   - Prisma 6.
+   - The initial migration.
+   - Schema for `Project`, `Requirement` and `Plan`.
+
+4. **Persistence boundaries**:
+   - Domain types, inferred from Zod schemas.
+   - Application-owned repository ports in `src/application/ports/`.
+   - Infrastructure Prisma implementations in
+     `src/infrastructure/persistence/`.
+   - Prisma types do not appear in a domain or application signature.
+
+5. **Environment and verification**:
+   - `DATABASE_URL` validated at server startup.
+   - `TEST_DATABASE_URL` required to differ from `DATABASE_URL`, so the
+     integration suite cannot delete development data.
+   - Repository integration tests running against a real PostgreSQL database.
+   - CI provisioning PostgreSQL and applying migrations before the suite.
+
+**What does not exist yet:**
+
+1. **Projects API and application use cases** (TASK-005).
+
+2. **Provider contracts, the mock Planner, and `AgentInvocation` audit
+   persistence** (TASK-007).
+
+3. **Requirement Planning Flow** (TASK-008).
+
+4. **The orchestrator** — agent sequencing, retry policy and pipeline
+   execution.
+
+5. **The providers**, including the mock providers.
+
+6. **Human approval gates** G1, G2 and G3, and the **Quality Gate**.
+
+7. **Pull Request generation.**
+
+8. **Further persistence.** `ArchitectureProposal` and `Task` persistence
+   remain deferred to the Sprint 2 Architect flow. The other target entities in
+   §5 — `AgentRun`, `Approval`, `QualityGateResult` and `PullRequestDraft` —
+   are unimplemented, and this document does not assign their delivery task.
+
+   `AgentInvocation` is **not** in this group: its model, migration and
+   append-only repository belong to TASK-007, listed in item 2 above.
 
 ---
 
@@ -231,15 +273,21 @@ special-cased handling in the application layer. See ADR-003.
 
 ## 5. Data model outline
 
-Prisma over PostgreSQL. Introduced in a later task, not during bootstrap. See
-ADR-007.
+Prisma over PostgreSQL, deferred out of the repository bootstrap and introduced
+in TASK-004. See ADR-007.
 
-Delivery is staged without changing this target model. TASK-004 implements
-`Project`, `Requirement` and `Plan`. `ArchitectureProposal` and `Task`
-persistence are introduced with the Architect flow in Sprint 2.
+Delivery is staged without changing this target model:
+
+- **TASK-004 implemented** `Project`, `Requirement` and `Plan`.
+- **TASK-007 introduces** `AgentInvocation` audit persistence — its Prisma
+  model, its migration, and its append-only repository.
+- **The Sprint 2 Architect flow introduces** `ArchitectureProposal` and `Task`
+  persistence.
+- **The other target entities shown below remain unimplemented.** This document
+  does not assign their delivery task unless it says so explicitly.
 
 ```text
-Project 1─n Requirement 1─1 Plan
+Project 1─n Requirement 1─0..1 Plan
                         1─1 ArchitectureProposal 1─n Task
 Task    1─n AgentRun
 AgentRun 1─n AgentInvocation      (append-only audit)
@@ -247,6 +295,10 @@ AgentRun 1─n Approval             (G1, G2, G3)
 AgentRun 1─1 QualityGateResult
 AgentRun 1─1 PullRequestDraft
 ```
+
+A requirement has **at most one** plan, and none at all until planning
+succeeds: the plan row is written only on a successful run, so
+`Requirement → Plan` is optional in one direction and unique in the other.
 
 Constraints:
 

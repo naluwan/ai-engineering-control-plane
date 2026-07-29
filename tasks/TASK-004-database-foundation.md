@@ -1,6 +1,6 @@
 # TASK-004：Database Foundation
 
-**Status:** Not started.
+**Status:** Completed.
 **Depends on:** TASK-001 (project and verification toolchain must exist).
 
 Does **not** depend on TASK-002 or TASK-003. This task adds no UI and must not
