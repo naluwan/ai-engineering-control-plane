@@ -63,6 +63,10 @@ export class PrismaProjectRepository implements ProjectRepository {
     return records.map(toDomain);
   }
 
+  async count(): Promise<number> {
+    return this.prisma.project.count();
+  }
+
   async update(id: string, input: UpdateProjectInput): Promise<Project | null> {
     try {
       const record = await this.prisma.project.update({

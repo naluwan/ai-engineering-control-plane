@@ -111,6 +111,38 @@ describe("PrismaProjectRepository", () => {
     });
   });
 
+  describe("count", () => {
+    it("returns 0 when no project exists", async () => {
+      expect(await repository.count()).toBe(0);
+    });
+
+    it("returns the number of persisted projects", async () => {
+      await repository.create({ name: "One" });
+      await repository.create({ name: "Two" });
+      await repository.create({ name: "Three" });
+
+      expect(await repository.count()).toBe(3);
+    });
+
+    it("is unaffected by pagination", async () => {
+      await repository.create({ name: "One" });
+      await repository.create({ name: "Two" });
+      await repository.create({ name: "Three" });
+
+      expect(await repository.list({ skip: 0, take: 1 })).toHaveLength(1);
+      expect(await repository.count()).toBe(3);
+    });
+
+    it("reflects a deletion", async () => {
+      const created = await repository.create({ name: "Doomed" });
+      await repository.create({ name: "Survivor" });
+
+      await repository.delete(created.id);
+
+      expect(await repository.count()).toBe(1);
+    });
+  });
+
   describe("update", () => {
     it("updates only the supplied fields", async () => {
       const created = await repository.create({
