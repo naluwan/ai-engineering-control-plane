@@ -1,9 +1,24 @@
 # Architecture
 
-**Status:** Target architecture for the MVP. Only a single static placeholder
-page and the verification toolchain exist today — the application shell itself
-is TASK-003 and is not built yet. PostgreSQL, Prisma, the orchestrator and the
-providers are specified here but **not installed and not implemented**.
+**Status:** Target architecture for the MVP.
+
+What exists today:
+
+- The **application shell** (TASK-003): the root layout, navigation, the `/`,
+  `/projects` and `/docs` routes, and the shared UI primitives.
+- The **verification toolchain**: TypeScript strict, ESLint, Vitest and the
+  build, all wired into `pnpm verify` and CI.
+
+What does **not** exist yet:
+
+- **PostgreSQL** — not installed, not implemented.
+- **Prisma** — not installed, not implemented.
+- **The orchestrator** — not implemented.
+- **The providers**, including the mock providers — not implemented.
+- Every persistence, application-layer and agent concern described below.
+
+TASK-004, which introduces PostgreSQL and Prisma, is **Not started**. Everything
+in sections 3 to 9 is specification for work not yet done.
 
 ---
 
@@ -58,8 +73,14 @@ operation rather than a rewrite. See ADR-001.
   `approveTasks`, `executeRun`, `evaluateQualityGate`, `generatePrDraft`.
 - Owns agent sequencing, retry policy, gate enforcement and transaction
   boundaries.
-- Depends on domain types and on infrastructure **interfaces**, never on
-  concrete adapters.
+- **Owns its repository interfaces / ports** — `ProjectRepository`,
+  `RequirementRepository`, `PlanRepository` and their successors. They are
+  declared in `src/application/ports/`, not in infrastructure.
+- **Owns its provider interfaces / ports** — `LlmProvider`, `GitProvider`,
+  `Clock`, `Logger`. Also declared in `src/application/ports/`.
+- Depends on domain types and on its **own** interfaces. Nothing else.
+- **Never imports a concrete infrastructure adapter.**
+- **Never imports or exposes a Prisma type**, in any signature, at any depth.
 - The only layer permitted to orchestrate. An agent never invokes another agent.
 
 ### 2.3 Domain layer
@@ -73,21 +94,68 @@ operation rather than a rewrite. See ADR-001.
 
 ### 2.4 Infrastructure layer
 
-- Prisma client and repository implementations.
-- Provider adapters implementing the application's interfaces.
-- Structured logger, configuration loading, clock.
-- Provider SDK types stay inside the adapter. They must never appear in an
-  application or domain signature.
+Infrastructure **implements** contracts it does not own.
+
+- **Prisma repositories implement the application-owned repository interfaces.**
+  They live in `src/infrastructure/persistence/`.
+- **Provider adapters implement the application-owned provider interfaces.**
+- Structured logger, configuration loading, clock — each behind an
+  application-owned interface.
+- Infrastructure **may depend on** application-owned contracts and on domain
+  types. That dependency points inward, which is why it is allowed.
+- **Prisma types stay inside infrastructure implementations.** They must never
+  appear in an application or domain signature.
+- Provider SDK types likewise stay inside the adapter.
+- No infrastructure implementation detail — a Prisma model, a client option, an
+  SDK error class — may leak into an application or domain signature.
+
+Infrastructure never declares an interface that application or domain code
+consumes. Interface ownership belongs to the inner layer that uses it.
 
 ### 2.5 Dependency rule
 
 Dependencies point inward only:
 
 ```text
-Presentation → Application → Domain
-                   ↓ (interfaces only)
-              Infrastructure
+┌───────────────────────────────────────────────┐
+│ Presentation                                  │
+└──────────────────────┬────────────────────────┘
+                       │
+                       ▼
+┌───────────────────────────────────────────────┐
+│ Application                                   │
+│ Owns repository and provider interfaces       │
+└──────────────────────┬────────────────────────┘
+                       │
+                       ▼
+┌───────────────────────────────────────────────┐
+│ Domain                                        │
+└───────────────────────────────────────────────┘
+                       ▲                ▲
+                       │                │
+              ┌────────┴────────────────┴────────┐
+              │ Infrastructure                   │
+              │ Implements Application contracts │
+              └──────────────────────────────────┘
 ```
+
+Read the arrows as "depends on":
+
+- **Presentation → Application.**
+- **Application → Domain**, and on its own interfaces.
+- **Domain → nothing.** It depends on neither Application nor Infrastructure.
+- **Infrastructure → Application** (the contracts it implements) **and
+  Infrastructure → Domain** (the types it maps to).
+
+Four consequences worth stating plainly:
+
+- Interfaces are owned by the inner layer that consumes them, not by the outer
+  layer that implements them.
+- Infrastructure implements those contracts; it does not define them.
+- **Dependency inversion does not mean Application imports Infrastructure.**
+  There is no arrow from Application to Infrastructure, and there must not be
+  one.
+- Concrete adapters remain outside Application and Domain entirely.
 
 Any import that violates this is a defect, not a style preference.
 
@@ -279,10 +347,10 @@ the seams that already exist.
 | Multiple teams need independent deploys        | Split along the existing application-module boundaries             |
 | Audit volume outgrows the primary database     | Move `AgentInvocation` to append-only storage behind the repository interface |
 
-What makes this cheap: the application layer already depends only on
-interfaces, the domain layer is I/O-free, and orchestration is a function rather
-than a distributed conversation. Extraction replaces an adapter; it does not
-rewrite a rule.
+What makes this cheap: the application layer already depends only on interfaces
+it owns itself, the domain layer is I/O-free, and orchestration is a function
+rather than a distributed conversation. Extraction replaces an adapter; it does
+not rewrite a rule.
 
 ---
 
