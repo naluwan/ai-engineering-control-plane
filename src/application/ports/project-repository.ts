@@ -34,6 +34,14 @@ export interface ProjectRepository {
   create(input: CreateProjectInput): Promise<Project>;
   findById(id: string): Promise<Project | null>;
   list(options?: ListProjectsOptions): Promise<Project[]>;
+  /**
+   * Total number of projects, ignoring any pagination window.
+   *
+   * A paginated response needs the total, and deriving it from `list()` would
+   * mean loading every row into memory to read its length — which stops being
+   * viable at exactly the point pagination starts to matter.
+   */
+  count(): Promise<number>;
   update(id: string, input: UpdateProjectInput): Promise<Project | null>;
   delete(id: string): Promise<boolean>;
 }
