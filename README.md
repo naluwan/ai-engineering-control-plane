@@ -31,7 +31,7 @@ Nothing in this README describes a planned capability as operational.
 | Application shell and docs | Implemented |
 | PostgreSQL and Prisma | Implemented |
 | Project API and persistence | Implemented |
-| Project workflow UI | Partially implemented — placeholder UI |
+| Project workflow UI | Not started — `/projects` is a placeholder route (TASK-006) |
 | Requirement and Plan persistence | Implemented foundation |
 | Requirement-to-Plan orchestration | Planned |
 | Planner execution | Not started |
@@ -44,7 +44,7 @@ Nothing in this README describes a planned capability as operational.
 | Application shell 與文件 | 已完成 |
 | PostgreSQL 與 Prisma | 已完成 |
 | Project API 與持久層 | 已完成 |
-| Project 操作介面 | 部分完成，目前仍是 placeholder |
+| Project 操作介面 | 尚未開始，`/projects` 仍為 placeholder 路由（TASK-006） |
 | Requirement 與 Plan 持久層 | 基礎已完成 |
 | Requirement-to-Plan 編排 | 規劃中 |
 | Planner 執行 | 尚未開始 |
@@ -92,9 +92,14 @@ AI Engineering Control Plane 探索另一種做法：讓工程工作經過明確
 
 ### Project management
 
-The API, use cases, validation, persistence, and tests are implemented. The `/projects` page remains a placeholder and is not connected to the API.
+What is partially implemented is the **Project management capability**, not the
+user interface. The API, use cases, validation, persistence, and tests are
+implemented. The user interface is not: `/projects` remains a placeholder route
+and is not connected to the API.
 
-Project API、Use Case、驗證、持久層與測試已完成；`/projects` 頁面仍是 placeholder，尚未串接 API。
+此處「部分完成」指的是 **Project 管理能力**，不是操作介面已可部分使用。Project
+API、Use Case、驗證、持久層與測試已完成；操作介面則尚未開始，`/projects` 仍為
+placeholder 路由，未串接 API。
 
 ### Requirement and Plan foundations
 
@@ -238,9 +243,10 @@ There is no Requirement submission or planning API yet.
 | Framework | Next.js 16 App Router |
 | UI | React 19, Tailwind CSS v4 |
 | Language | TypeScript 5, strict mode |
-| Validation | Zod |
-| Persistence | PostgreSQL, Prisma |
-| Testing | Vitest, React Testing Library, real PostgreSQL integration tests |
+| Validation | Zod 4 |
+| Persistence | PostgreSQL 16, Prisma 6 |
+| Testing | Vitest 4, React Testing Library, real PostgreSQL integration tests |
+| Linting | ESLint 9 |
 | CI | GitHub Actions |
 
 Deliberately absent from the current implementation: Redis, BullMQ, LangGraph, MCP, RAG, Kubernetes, and microservices. Architectural reasoning is documented in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) and [`docs/DECISIONS.md`](./docs/DECISIONS.md).
@@ -305,9 +311,9 @@ Or run the repository quality gate:
 pnpm verify
 ```
 
-The presence of a CI workflow is verified. This README does not include a CI badge because the current remote workflow result was not verified in this documentation-only phase.
+GitHub Actions is configured to provision PostgreSQL, apply migrations, and run type checking, linting, tests, and the production build. This README does not include a CI badge.
 
-已確認 Repository 內存在 CI Workflow；由於本次文件修正未驗證遠端 Workflow 結果，因此不加入 CI Badge。
+GitHub Actions 已設定為佈建 PostgreSQL、套用 Migration，並執行 Type Check、Lint、Test 與 Production Build。本文件未加入 CI Badge。
 
 ## Documentation / 文件
 
@@ -332,7 +338,16 @@ The presence of a CI workflow is verified. This README does not include a CI bad
 
 ## Next Milestone / 下一個里程碑
 
-The next demonstrable vertical slice is:
+### Next implementation task
+
+The next task on the roadmap is **TASK-006 Projects UI** — connecting the
+`/projects` route to the existing Projects API. See
+[`docs/ROADMAP.md`](./docs/ROADMAP.md).
+
+Roadmap 上的下一項任務是 **TASK-006 Projects UI**，也就是將 `/projects` 路由串接
+到既有的 Projects API。
+
+### Next demonstrable vertical slice
 
 ```text
 Submit Requirement
@@ -343,9 +358,14 @@ Submit Requirement
 → Display result
 ```
 
-The slice must include explicit failure handling and integration tests before it is described as implemented.
+This slice is **not a current capability**. It requires three tasks that have
+all yet to begin — TASK-006 Projects UI, TASK-007 Mock Planner contracts, and
+TASK-008 Requirement planning flow — and it must include explicit failure
+handling and integration tests before it is described as implemented.
 
-下一個可展示的垂直切片為 Requirement 提交、持久化、Mock Planner 執行、Plan 驗證、Plan 持久化與結果顯示。必須完成明確的失敗處理與整合測試後，才能標示為已完成。
+此垂直切片**並非目前已具備的能力**。它需要三項尚未開始的任務：TASK-006 Projects
+UI、TASK-007 Mock Planner 契約，以及 TASK-008 Requirement Planning Flow。必須完成
+明確的失敗處理與整合測試後，才能標示為已完成。
 
 ## License
 
