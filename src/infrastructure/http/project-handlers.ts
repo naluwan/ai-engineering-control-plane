@@ -32,8 +32,16 @@ import {
  * generic `INTERNAL_ERROR`.
  */
 
+/**
+ * What a route hands the boundary.
+ *
+ * `createRepository` is a *factory*, not a repository. Constructing the real
+ * one validates `DATABASE_URL` and builds a Prisma client, both of which can
+ * throw; passing it unexecuted is what lets `guard()` cover that failure
+ * instead of letting it escape the handler entirely.
+ */
 export type ProjectHandlerDependencies = {
-  repository: ProjectRepository;
+  createRepository: () => ProjectRepository | Promise<ProjectRepository>;
   logger: Logger;
   correlationId: string;
 };
@@ -41,7 +49,14 @@ export type ProjectHandlerDependencies = {
 type SuccessBody<T> = { data: T };
 type ListBody = { data: ProjectResponse[]; pagination: PaginationResponse };
 
-/** The request facts every log line for this outcome must carry. */
+/**
+ * The request facts every log line for this outcome must carry.
+ *
+ * Mutable `path` on purpose: the by-id route only learns its real path after
+ * the dynamic params resolve, which happens inside the guard. Until then the
+ * safe route template stands in, so a failure before resolution still logs a
+ * usable path rather than an interpolated unknown.
+ */
 type RequestScope = {
   event: string;
   method: string;
@@ -137,7 +152,8 @@ export async function handleCreateProject(
       );
     }
 
-    const result = await createProject(deps.repository, body.value);
+    const repository = await deps.createRepository();
+    const result = await createProject(repository, body.value);
 
     if (!result.ok) {
       return complete(
@@ -175,7 +191,8 @@ export async function handleListProjects(
     const url = new URL(request.url);
     const query = Object.fromEntries(url.searchParams.entries());
 
-    const result = await listProjects(deps.repository, query);
+    const repository = await deps.createRepository();
+    const result = await listProjects(repository, query);
 
     if (!result.ok) {
       return complete(
@@ -225,17 +242,25 @@ function pathForProjectId(id: unknown): string {
 }
 
 export async function handleGetProjectById(
-  id: unknown,
+  resolveId: () => unknown | Promise<unknown>,
   deps: ProjectHandlerDependencies,
 ): Promise<Response> {
   const scope: RequestScope = {
     event: "projects.get",
     method: "GET",
-    path: pathForProjectId(id),
+    // Stands in until the dynamic params resolve, just below.
+    path: "/api/projects/[id]",
   };
 
   return guard(deps, scope, async () => {
-    const result = await getProjectById(deps.repository, id);
+    // Inside the guard on purpose: resolving a route's params can reject, and
+    // that failure has to produce the same 500 contract as any other.
+    const id = await resolveId();
+
+    scope.path = pathForProjectId(id);
+
+    const repository = await deps.createRepository();
+    const result = await getProjectById(repository, id);
 
     if (!result.ok) {
       return complete(

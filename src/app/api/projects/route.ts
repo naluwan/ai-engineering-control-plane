@@ -11,7 +11,10 @@ import {
  * rather than being eligible for the Edge runtime.
  *
  * This module imports no persistence: the concrete repository is built by the
- * composition root, lazily, once a request arrives.
+ * composition root's factory, which the handler invokes **inside** its guard.
+ * Nothing that can fail — environment validation, Prisma client construction —
+ * runs out here, where a throw would bypass the `INTERNAL_ERROR` contract, the
+ * correlation id and the structured log.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

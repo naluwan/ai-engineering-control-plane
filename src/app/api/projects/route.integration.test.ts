@@ -1,6 +1,7 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Logger } from "@/application/ports/logger";
+import type { ProjectRepository } from "@/application/ports/project-repository";
 import {
   handleCreateProject,
   handleListProjects,
@@ -21,7 +22,19 @@ import {
  * the same `PrismaProjectRepository` production uses. Prisma is not mocked —
  * mocking it would prove nothing about the schema, the mapping, or the error
  * paths that matter here.
+ *
+ * The bootstrap-failure suites at the bottom invoke the *route exports*
+ * themselves, with the composition root's dependency factory mocked. That is
+ * the only way to prove the guard covers dependency initialisation: a test
+ * that calls the handler directly has already survived the step that used to
+ * throw.
  */
+
+const { compositionMock } = vi.hoisted(() => ({
+  compositionMock: { createProjectDependencies: vi.fn() },
+}));
+
+vi.mock("@/composition/projects", () => compositionMock);
 
 const prisma = getTestPrismaClient();
 const repository = new PrismaProjectRepository(prisma);
@@ -31,17 +44,32 @@ const SECRET_URL = "postgresql://acp:s3cr3t_pw@db.internal:5432/acp_dev";
 
 let logLines: string[];
 
-function deps(overrides: Partial<ProjectHandlerDependencies> = {}): ProjectHandlerDependencies {
-  const logger: Logger = createStructuredLogger({
-    write: (line) => logLines.push(line),
-  });
+function testLogger(): Logger {
+  return createStructuredLogger({ write: (line) => logLines.push(line) });
+}
 
+function deps(
+  overrides: Partial<ProjectHandlerDependencies> = {},
+): ProjectHandlerDependencies {
   return {
-    repository,
-    logger,
+    createRepository: () => repository,
+    logger: testLogger(),
     correlationId: CORRELATION_ID,
     ...overrides,
   };
+}
+
+/** A repository whose named method throws, standing in for an outage. */
+function failingRepository(
+  method: keyof ProjectRepository,
+  message: string,
+): ProjectRepository {
+  return {
+    ...repository,
+    [method]: () => {
+      throw new Error(message);
+    },
+  } as unknown as ProjectRepository;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -210,19 +238,12 @@ describe("POST /api/projects", () => {
   });
 
   describe("when the repository fails unexpectedly", () => {
-    const failing = {
-      ...repository,
-      create: () => {
-        throw new Error(
-          `PrismaClientKnownRequestError: connect ECONNREFUSED ${SECRET_URL}\n    at Object.<anonymous> (/app/src/db.ts:10:15)`,
-        );
-      },
-    } as unknown as typeof repository;
+    const failing = failingRepository("create", `PrismaClientKnownRequestError: connect ECONNREFUSED ${SECRET_URL}\n    at Object.<anonymous> (/app/src/db.ts:10:15)`);
 
     it("returns 500 with a generic INTERNAL_ERROR", async () => {
       const response = await handleCreateProject(
         postRequest({ name: "Slice" }),
-        deps({ repository: failing }),
+        deps({ createRepository: () => failing }),
       );
       const body = (await response.json()) as { error: { code: string } };
 
@@ -233,7 +254,7 @@ describe("POST /api/projects", () => {
     it("leaks no Prisma detail, stack trace or credential to the client", async () => {
       const response = await handleCreateProject(
         postRequest({ name: "Slice" }),
-        deps({ repository: failing }),
+        deps({ createRepository: () => failing }),
       );
       const text = await response.text();
 
@@ -247,7 +268,7 @@ describe("POST /api/projects", () => {
     it("leaks no credential into the log either", async () => {
       await handleCreateProject(
         postRequest({ name: "Slice" }),
-        deps({ repository: failing }),
+        deps({ createRepository: () => failing }),
       );
 
       const text = logLines.join("\n");
@@ -260,7 +281,7 @@ describe("POST /api/projects", () => {
     it("still records the correlation id so the log can be found", async () => {
       await handleCreateProject(
         postRequest({ name: "Slice" }),
-        deps({ repository: failing }),
+        deps({ createRepository: () => failing }),
       );
 
       expect(logLines.join("\n")).toContain(CORRELATION_ID);
@@ -318,16 +339,11 @@ describe("POST /api/projects — request log metadata", () => {
   });
 
   it("records statusCode 500 on an unexpected failure, with no credential", async () => {
-    const failing = {
-      ...repository,
-      create: () => {
-        throw new Error(`connect failed: ${SECRET_URL}`);
-      },
-    } as unknown as typeof repository;
+    const failing = failingRepository("create", `connect failed: ${SECRET_URL}`);
 
     await handleCreateProject(
       postRequest({ name: "Slice" }),
-      deps({ repository: failing }),
+      deps({ createRepository: () => failing }),
     );
 
     const parsed = parseOutcomeLog();
@@ -388,14 +404,9 @@ describe("GET /api/projects — request log metadata", () => {
   });
 
   it("records statusCode 500 on an unexpected failure, with no credential", async () => {
-    const failing = {
-      ...repository,
-      list: () => {
-        throw new Error(`connect failed: ${SECRET_URL}`);
-      },
-    } as unknown as typeof repository;
+    const failing = failingRepository("list", `connect failed: ${SECRET_URL}`);
 
-    await handleListProjects(getRequest(), deps({ repository: failing }));
+    await handleListProjects(getRequest(), deps({ createRepository: () => failing }));
 
     const parsed = parseOutcomeLog();
 
@@ -481,5 +492,113 @@ describe("GET /api/projects", () => {
     const response = await handleListProjects(getRequest(), deps());
 
     expect(response.headers.get("x-correlation-id")).toBe(CORRELATION_ID);
+  });
+});
+
+/**
+ * ROUTE-C01 — dependency initialisation must be inside the guard.
+ *
+ * These invoke the real route exports. The composition root's factory is
+ * mocked to throw, standing in for a missing `DATABASE_URL`, a malformed one,
+ * or a Prisma client that cannot be constructed. Before the fix that exception
+ * escaped before `guard()` ran, so the client got whatever Next.js produces
+ * for an unhandled throw: no `INTERNAL_ERROR` body, no correlation id, no log.
+ *
+ * The route module itself is never mocked — that would defeat the point.
+ */
+describe("route exports — dependency bootstrap failure", () => {
+  const BOOTSTRAP_ERROR = `EnvironmentValidationError: DATABASE_URL rejected — ${SECRET_URL}\n    at loadAppEnv (/app/src/env.ts:12:11)`;
+
+  let repositoryFactory: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    repositoryFactory = vi.fn(() => {
+      throw new Error(BOOTSTRAP_ERROR);
+    });
+
+    compositionMock.createProjectDependencies.mockReset();
+    compositionMock.createProjectDependencies.mockImplementation(() => ({
+      logger: testLogger(),
+      createRepository: repositoryFactory,
+    }));
+  });
+
+  async function expectSafeBootstrapFailure(
+    response: Response,
+    expected: { event: string; method: string; path: string },
+  ): Promise<void> {
+    expect(response.status).toBe(500);
+
+    const header = response.headers.get("x-correlation-id");
+    const body = (await response.json()) as {
+      error: { code: string; message: string };
+      correlationId: string;
+    };
+
+    expect(body.error.code).toBe("INTERNAL_ERROR");
+    expect(body.error.message).toBe("An unexpected error occurred.");
+    expect(header).toBeTruthy();
+    expect(body.correlationId).toBe(header);
+
+    // Exactly one log line, and it describes this request.
+    expect(logLines).toHaveLength(1);
+
+    const parsed: unknown = JSON.parse(logLines[0] ?? "");
+
+    expect(isRecord(parsed)).toBe(true);
+    expect(parsed).toMatchObject({
+      level: "error",
+      event: expected.event,
+      method: expected.method,
+      path: expected.path,
+      statusCode: 500,
+      correlationId: header,
+    });
+
+    // Neither the client nor the log carries the credential.
+    expect(JSON.stringify(body)).not.toContain("s3cr3t_pw");
+    expect(JSON.stringify(body)).not.toMatch(/prisma/i);
+    expect(logLines[0]).not.toContain("s3cr3t_pw");
+    expect(logLines[0]).not.toContain("postgresql://");
+  }
+
+  it("POST returns a guarded 500 when the repository factory throws", async () => {
+    const { POST } = await import("@/app/api/projects/route");
+
+    await expectSafeBootstrapFailure(
+      await POST(postRequest({ name: "Slice" })),
+      { event: "projects.create", method: "POST", path: "/api/projects" },
+    );
+  });
+
+  it("GET collection returns a guarded 500 when the repository factory throws", async () => {
+    const { GET } = await import("@/app/api/projects/route");
+
+    await expectSafeBootstrapFailure(await GET(getRequest()), {
+      event: "projects.list",
+      method: "GET",
+      path: "/api/projects",
+    });
+  });
+
+  it("does not continue into the repository query after a bootstrap failure", async () => {
+    const { POST } = await import("@/app/api/projects/route");
+
+    await POST(postRequest({ name: "Slice" }));
+
+    expect(repositoryFactory).toHaveBeenCalledTimes(1);
+    // Nothing reached the database.
+    expect(await prisma.project.count()).toBe(0);
+  });
+
+  it("generates a distinct correlation id per request", async () => {
+    const { POST } = await import("@/app/api/projects/route");
+
+    const first = await POST(postRequest({ name: "Slice" }));
+    const second = await POST(postRequest({ name: "Slice" }));
+
+    expect(first.headers.get("x-correlation-id")).not.toBe(
+      second.headers.get("x-correlation-id"),
+    );
   });
 });
