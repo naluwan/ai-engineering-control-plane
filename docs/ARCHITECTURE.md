@@ -1,8 +1,9 @@
 # Architecture
 
 **Status:** This document describes the complete **target architecture** for the
-MVP. The application shell and the database foundation are in place; the
-workflow layers built on top of them are not.
+MVP. The application shell, the database foundation and the Projects API with
+its application use cases are in place. The project-management UI, the agent
+workflow and the orchestration built on top of them are not.
 
 Sections 3 to 9 remain the target design. Some of the capabilities they
 describe are now implemented and some are still ahead — the inventory below is
@@ -29,21 +30,47 @@ the accurate account of which is which, and is the part to read first.
      `src/infrastructure/persistence/`.
    - Prisma types do not appear in a domain or application signature.
 
-5. **Environment and verification**:
-   - `DATABASE_URL` validated at server startup.
+5. **Projects API and application use cases** (TASK-005):
+   - Use cases `createProject`, `listProjects` and `getProjectById`, each
+     depending only on the `ProjectRepository` port.
+   - Endpoints `POST /api/projects`, `GET /api/projects` and
+     `GET /api/projects/[id]`.
+   - Zod validation at the HTTP boundary, with a strict request schema.
+   - A shared discriminated `Result` type and the `AppError` taxonomy, mapped
+     to HTTP status codes in one place.
+   - Pagination whose total comes from `ProjectRepository.count()` rather than
+     from the length of the returned page.
+   - Structured request logging: one line per outcome, carrying `event`,
+     `correlationId`, `method`, `path` and `statusCode`.
+   - Correlation identifiers, returned to the client in `x-correlation-id` and
+     recorded in the matching log line.
+   - Credential-safe redaction, so no connection string, password or token can
+     reach a log.
+   - Dependency bootstrap inside the guarded request boundary, so a failure to
+     validate the environment or construct the client still produces the
+     standard `INTERNAL_ERROR` response, correlation id and log.
+
+6. **Environment and verification**:
+   - `DATABASE_URL` is validated when persistence is first initialised, inside
+     the guarded request boundary. Import-time module loading and production
+     builds open no database connection.
    - `TEST_DATABASE_URL` required to differ from `DATABASE_URL`, so the
      integration suite cannot delete development data.
-   - Repository integration tests running against a real PostgreSQL database.
+   - Repository and route integration tests running against a real PostgreSQL
+     database.
    - CI provisioning PostgreSQL and applying migrations before the suite.
 
 **What does not exist yet:**
 
-1. **Projects API and application use cases** (TASK-005).
+1. **Projects UI** — creating, listing and viewing projects in the browser
+   (TASK-006). `/projects` is still the placeholder from TASK-003.
 
 2. **Provider contracts, the mock Planner, and `AgentInvocation` audit
    persistence** (TASK-007).
 
-3. **Requirement Planning Flow** (TASK-008).
+3. **Requirement Planning Flow** (TASK-008). `Requirement` and `Plan` are
+   persisted, and their repositories and ports exist, but no endpoint or
+   workflow reads or writes them yet.
 
 4. **The orchestrator** — agent sequencing, retry policy and pipeline
    execution.
@@ -54,7 +81,9 @@ the accurate account of which is which, and is the part to read first.
 
 7. **Pull Request generation.**
 
-8. **Further persistence.** `ArchitectureProposal` and `Task` persistence
+8. **Authentication, authorisation and any deployed environment.**
+
+9. **Further persistence.** `ArchitectureProposal` and `Task` persistence
    remain deferred to the Sprint 2 Architect flow. The other target entities in
    §5 — `AgentRun`, `Approval`, `QualityGateResult` and `PullRequestDraft` —
    are unimplemented, and this document does not assign their delivery task.

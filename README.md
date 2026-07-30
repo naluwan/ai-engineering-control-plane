@@ -14,26 +14,54 @@ transitions, and every step is recorded.
 ## Current status
 
 ```text
-Current status: Repository foundation and product planning.
-The real agent execution workflow has not been implemented yet.
+Current status: Sprint 1 backend foundation is implemented through TASK-005.
+PostgreSQL/Prisma persistence and the create, list and get-by-id Projects API
+are available. The real agent execution workflow and project-management UI are
+not implemented yet.
 ```
 
 What exists today:
 
-- A Next.js App Router application with a single placeholder page.
-- TypeScript strict mode, ESLint, Tailwind CSS.
-- Vitest + React Testing Library with a passing test suite.
-- A CI workflow running typecheck, lint, test and build.
-- The complete product, architecture and task documentation set.
+- A **Next.js 16 App Router application** on Node.js 22 and pnpm 11, with
+  TypeScript strict mode, ESLint and Tailwind CSS. The UI is still the
+  placeholder shell — an overview page, a `/projects` placeholder and a `/docs`
+  index.
+- **PostgreSQL 16 with Prisma 6**, provisioned locally through Docker Compose,
+  with the initial migration and schema for `Project`, `Requirement` and
+  `Plan`.
+- **Layered persistence**: domain types inferred from Zod schemas,
+  application-owned repository ports, and Prisma adapters that keep Prisma
+  types out of every domain and application signature.
+- **The Projects API** — `POST /api/projects`, `GET /api/projects` with
+  pagination and a total count, and `GET /api/projects/[id]` — behind a
+  discriminated `Result` type and a shared `AppError` contract.
+- **Structured request logging**: one JSON line per request outcome carrying a
+  correlation identifier, method, path and status code, with credential-safe
+  redaction so no connection string, password or token can reach a log.
+- **Tests that mean something**: unit tests for the domain, schemas and use
+  cases, plus integration tests running against a real PostgreSQL database
+  rather than a mocked client.
+- **CI** that provisions PostgreSQL, applies migrations, then runs typecheck,
+  lint, test and build.
+- The complete **product, architecture, task and AI governance documentation**
+  set.
 
 What does **not** exist yet:
 
-- No database, no Prisma schema, no migrations.
-- No agents. Planner, Architect, Coder, Reviewer, Tester, Security and the PR
-  Generator are specified in [`AGENTS.md`](./AGENTS.md) but not implemented.
-- No LLM provider integration. No API keys are stored or required.
-- No GitHub App or GitHub API integration.
-- No authentication, no dashboard, no project or task management screens.
+- **No agents.** Planner, Architect, Coder, Reviewer, Tester, Security and the
+  PR Generator are specified in [`AGENTS.md`](./AGENTS.md) but not implemented.
+- **No orchestration**: no agent run pipeline, no retry policy, no approval
+  gates, no Quality Gate.
+- **No LLM provider integration**, not even the mock providers. No API keys are
+  stored or required.
+- **No GitHub App or GitHub API integration**, and no Pull Request generation.
+- **No requirement or plan API, and no agent workflow.** `Requirement` and
+  `Plan` are persisted — the tables, repositories and ports exist — but nothing
+  yet reads or writes them through an endpoint.
+- **No project-management UI.** `/projects` is a placeholder; creating, listing
+  and viewing projects in the browser is TASK-006.
+- **No authentication, no dashboard, no deployment.** This is not a hosted
+  service.
 
 Nothing in this repository pretends to be finished. Where a document describes
 future behaviour it says so explicitly.
@@ -77,17 +105,18 @@ token is spent on a real model. See [`docs/PRD.md`](./docs/PRD.md).
 
 ## Tech stack
 
-| Concern           | Choice                                          |
-| ----------------- | ----------------------------------------------- |
-| Runtime           | Node.js 22                                      |
-| Package manager   | pnpm 11                                         |
-| Framework         | Next.js 16 (App Router)                         |
-| UI                | React 19, Tailwind CSS v4                       |
-| Language          | TypeScript 5, `strict` mode, no `any`           |
-| Testing           | Vitest 4, React Testing Library, jsdom          |
-| Linting           | ESLint 9 (flat config, `eslint-config-next`)    |
-| Persistence       | PostgreSQL + Prisma — **planned, not installed** |
-| Agent contracts   | Zod schemas — **planned, not installed**        |
+| Concern         | Choice                                                                        |
+| --------------- | ----------------------------------------------------------------------------- |
+| Runtime         | Node.js 22                                                                    |
+| Package manager | pnpm 11                                                                       |
+| Framework       | Next.js 16 (App Router)                                                       |
+| UI              | React 19, Tailwind CSS v4                                                     |
+| Language        | TypeScript 5, `strict` mode, no `any`                                         |
+| Persistence     | PostgreSQL 16, Prisma 6                                                       |
+| Validation      | Zod 4                                                                         |
+| Testing         | Vitest 4, React Testing Library, jsdom, real-PostgreSQL integration tests     |
+| Linting         | ESLint 9 (flat config, `eslint-config-next`)                                  |
+| Agent contracts | Specified in [`AGENTS.md`](./AGENTS.md); runtime schemas and orchestration are not implemented |
 
 Deliberately absent from the MVP: Redis, BullMQ, LangGraph, MCP, RAG,
 Kubernetes, microservices. The reasoning is recorded in

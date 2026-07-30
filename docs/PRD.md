@@ -2,8 +2,10 @@
 
 **Product:** AI Engineering Control Plane
 **Category:** AI-Native Software Engineering Platform
-**Status:** Repository foundation and product planning. The real agent
-execution workflow has not been implemented yet.
+**Status:** Sprint 1 backend foundation is implemented through TASK-005.
+PostgreSQL/Prisma persistence and the create, list and get-by-id Projects API
+are available. The real agent execution workflow and project-management UI have
+not been implemented yet.
 
 ---
 

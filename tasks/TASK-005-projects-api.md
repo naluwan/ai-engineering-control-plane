@@ -1,6 +1,6 @@
 # TASK-005：Projects API
 
-**Status:** Not started.
+**Status:** Completed.
 **Depends on:** TASK-004 (Prisma schema, `ProjectRepository` interface and its
 Prisma implementation must exist).
 
