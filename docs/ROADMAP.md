@@ -2,9 +2,13 @@
 
 Delivery sequence for the AI Engineering Control Plane.
 
-**Current position:** Sprint 1, items 1 and 2 (Repository foundation,
-Documentation baseline) complete. Next up is item 3, TASK-003 Application Shell.
-Everything else on this page is planned work.
+**Current position:** Sprint 1, items 1 through 5 complete — TASK-001 through
+TASK-005. The next listed task is item 6, **TASK-006 Projects UI**; TASK-007 and
+TASK-008 remain not started, and Sprint 1 is not finished.
+
+TASK-007's dependency (TASK-004) is also satisfied, so it could be picked up
+independently — but the listed order is TASK-006 next. Everything else on this
+page is planned work.
 
 Task status here reflects execution and verification state, not merge state.
 See [`../CLAUDE.md`](../CLAUDE.md) §12.
@@ -24,8 +28,8 @@ validated plan and an approvable task set, driven entirely by mock providers.
 | 1 | Repository foundation     | TASK-001 | —          | Next.js + TypeScript strict + Tailwind + Vitest + ESLint + CI. `pnpm verify` green. **Done.** |
 | 2 | Documentation baseline    | TASK-002 | 001        | All documents cross-checked for consistency. No engineering changes. **Done.**                |
 | 3 | Application shell         | TASK-003 | 001        | Layout, navigation, shared UI primitives, route structure. No business features. **Done.**     |
-| 4 | Database foundation       | TASK-004 | 001        | PostgreSQL + Prisma installed, schema for Project/Requirement/Plan, migrations, test DB.       |
-| 5 | Projects API              | TASK-005 | 004        | Application use cases and route handlers for create/list/get, Zod-validated.                   |
+| 4 | Database foundation       | TASK-004 | 001        | PostgreSQL + Prisma installed, schema for Project/Requirement/Plan, migrations, test DB. **Done.** |
+| 5 | Projects API              | TASK-005 | 004        | Application use cases and route handlers for create/list/get, Zod-validated. **Done.**         |
 | 6 | Projects UI               | TASK-006 | 003, 005   | Project list, detail and creation form wired to the API.                                       |
 | 7 | Mock Planner contracts    | TASK-007 | 004        | `LlmProvider` interface, `PlanSchema`, deterministic mock provider, invocation audit record.    |
 | 8 | Requirement planning flow | TASK-008 | 005, 006, 007 | Submit a requirement → run mock Planner → persist plan → display it.                        |
